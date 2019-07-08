@@ -17,6 +17,11 @@ struct NotImplementedError: public std::runtime_error {
         std::runtime_error(std::forward<Args>(args)...) {}
 };
 
+enum CmpType {
+    SIMILARITY,
+    DISTANCE
+};
+
 // See http://www.iiisci.org/journal/CV$/sci/pdfs/GS315JG.pdf
 
 template<typename FT=double>
@@ -32,15 +37,17 @@ struct SetDistInterface {
         constexpr FT operator()(size_t a, size_t b, size_t c) const {\
             return (RETVAL);\
         }\
+        static constexpr CmpType cmp = SIMILARITY;\
     };\
     template<typename FT=double>\
     struct NAME##Distance: public SetDistInterface<FT> {\
         constexpr FT operator()(size_t a, size_t b, size_t c) const {\
             return 1. - (RETVAL);\
-        }\
+        };\
+        static constexpr CmpType cmp = DISTANCE;\
     };\
-    template<typename FT> using NAME##Sim = NAME##Similarity<FT>;\
-    template<typename FT> using NAME##Dist = NAME##Distance<FT>;
+    template<typename FT=double> using NAME##Sim = NAME##Similarity<FT>;\
+    template<typename FT=double> using NAME##Dist = NAME##Distance<FT>;
     
 #define DEFINE_SETDIST_FUNC(NAME, RETVAL) \
     template<typename FT=double>\
@@ -48,8 +55,9 @@ struct SetDistInterface {
         constexpr FT operator()(size_t a, size_t b, size_t c) const {\
             return (RETVAL);\
         }\
+        static constexpr CmpType cmp = DISTANCE;\
     };\
-    template<typename FT> using NAME##Dist = NAME##Distance<FT>;
+    template<typename FT=double> using NAME##Dist = NAME##Distance<FT>;
 
 DEFINE_SETSIM_FUNC(Jaccard, static_cast<FT>(a) / (a+b+c)) // Also equivalent to Tanimoto
 DEFINE_SETSIM_FUNC(Dice, static_cast<FT>(2*a) / (2 * a + b + c))
@@ -82,6 +90,7 @@ struct MinkowskiDistance: public SetDistInterface<FT> {
         return std::pow(b+c, pinv_);
     }
 };
+
 template<typename FT=double>
 struct SoftJaccardSimilarity: public SetDistInterface<FT> {
     const FT smooth_;
@@ -91,13 +100,13 @@ struct SoftJaccardSimilarity: public SetDistInterface<FT> {
     }
 };
 
+#undef DEFINE_SETSIM_FUNC
+#undef DEFINE_SETDIST_FUNC
 
-
-
-template<typename FT> using CzekanowskiSimilarity = DiceSimilarity<FT>;
-template<typename FT> using CzekanowskiSim = CzekanowskiSimilarity<FT>;
-template<typename FT> using SquaredEuclidDist = HammingDist<FT>;
-template<typename FT> using Canberra = HammingDist<FT>;
+template<typename FT=double> using CzekanowskiSimilarity = DiceSimilarity<FT>;
+template<typename FT=double> using CzekanowskiSim = CzekanowskiSimilarity<FT>;
+template<typename FT=double> using SquaredEuclidDist = HammingDist<FT>;
+template<typename FT=double> using Canberra = HammingDist<FT>;
 } // dist
 
 #endif  /* DIST_CORE_H__ */

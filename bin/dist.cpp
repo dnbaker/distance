@@ -13,4 +13,8 @@ int main() {
     DO_THING(JaccardSimilarity);
     DO_THING(DiceSimilarity);
     DO_THING(SoftJaccardSimilarity);
+    DO_THING(CzekanowskiSim);
+    DO_THING(McConnaugheySim);
+    DO_THING(MountFordSimilarity);
+    DO_THING(HammingDist);
 }
