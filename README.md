@@ -32,7 +32,7 @@ We support the following from [this paper](http://www.iiisci.org/journal/CV$/sci
 20. Chord
 21. Minkowski
 
-\* Full Citation: `Choi, Seung-Seok, Sung-Hyuk Cha, and Charles C. Tappert. "A survey of binary similarity and distance measures." Journal of Systemics, Cybernetics and Informatics 8.1 (2010): 43-48.
+\* Full Citation: `Choi, Seung-Seok, Sung-Hyuk Cha, and Charles C. Tappert. "A survey of binary similarity and distance measures." Journal of Systemics, Cybernetics and Informatics 8.1 (2010): 43-48.`
 
 #### Real-valued distances
 
