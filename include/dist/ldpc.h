@@ -20,6 +20,8 @@ void fisher_yates_shuffle(It1 i1, It2 i2, F gen=F()) {
         swap(i1[dist], i1[gen()%dist]);
     }
 }
+
+
 template<typename Con, typename F>
 void fisher_yates_shuffle(Con &c, F gen=F()) {
     fisher_yates_shuffle(std::begin(c), std::end(c));
@@ -33,7 +35,7 @@ void dump_binary_matrix(const std::vector<T, Alloc> &c, int rowlen, std::FILE *f
         for(size_t j = 0; j < (rowlen + (BPE - 1)) / BPE; ++j) {
             auto v = p[j];
             for(size_t k = 0; k < BPE; ++k) {
-                std::fputc("01"[(v>>k)&1], fp);
+                std::fputc('0' + ((v>>k)&1)], fp);
             }
         }
         std::fputc('\n', fp);
@@ -67,10 +69,12 @@ std::vector<T, Alloc> generate_ldpc(int rowlen, int ones_per_row, int height, bo
         
     }
     std::mt19937_64 mt;
+    const auto retptr = ret.data();
+    if(unaltered_include) retptr += items_per_row * rat;
     for(size_t i = 0; i < nrows; ++i) {
         fisher_yates_shuffle(copy, mt);
         for(size_t j = 0; j < rowlen; ++j) {
-            ret[offset + items_per_row * i + j / BPE] |= T(base[copy[j]]) << (j % BPE);
+            retptr[items_per_row * i + j / BPE] |= T(base[copy[j]]) << (j % BPE);
         }
     }
     return ret;
