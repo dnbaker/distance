@@ -1,5 +1,7 @@
 #ifndef LDPC_H__
 #define LDPC_H__
+#include <cassert>
+#include <set>
 #include <climits>
 #include <random>
 #include <cstdio>
@@ -12,19 +14,25 @@ namespace ldpc {
 
 using std::size_t;
 
+
 template<typename It1, typename It2, typename F>
-void fisher_yates_shuffle(It1 i1, It2 i2, F gen=F()) {
+void fisher_yates_shuffle(It1 i1, It2 i2, F gen=F());
+template<typename Con, typename F>
+void fisher_yates_shuffle(Con &c, F gen=F());
+
+template<typename It1, typename It2, typename F>
+void fisher_yates_shuffle(It1 i1, It2 i2, F gen) {
     using std::swap;
-    size_t dist = std::distance(i1, i2);
-    for(size_t dist = std::distance(i1, i2);dist > 1; --dist) {
+    size_t dist = std::distance(i1, i2) - 1;
+    for(;dist > 1; --dist) {
         swap(i1[dist], i1[gen()%dist]);
     }
 }
 
 
 template<typename Con, typename F>
-void fisher_yates_shuffle(Con &c, F gen=F()) {
-    fisher_yates_shuffle(std::begin(c), std::end(c));
+void fisher_yates_shuffle(Con &c, F gen) {
+    fisher_yates_shuffle<decltype(std::begin(c)), decltype(std::end(c)),F>(std::begin(c), std::end(c), gen);
 }
 
 template<typename T, typename Alloc, typename=std::enable_if_t<std::is_arithmetic<T>::value>>
@@ -34,13 +42,14 @@ void dump_binary_matrix(const std::vector<T, Alloc> &c, int rowlen, std::FILE *f
         static constexpr size_t BPE = sizeof(T) * CHAR_BIT;
         for(size_t j = 0; j < (rowlen + (BPE - 1)) / BPE; ++j) {
             auto v = p[j];
-            for(size_t k = 0; k < BPE; ++k) {
-                std::fputc('0' + ((v>>k)&1)], fp);
-            }
+            for(size_t k = 0; k < BPE; )
+                std::fputc('0' + ((v>>k++)&1), fp);
         }
         std::fputc('\n', fp);
     }
 }
+
+template<typename T>void show_vec(const T &x) {for(const auto i: x) std::fprintf(stderr, "%zu\n", size_t(i)); std::fputc('\n', stderr);}
 
 // Based on https://github.com/yunwilliamyu/opal code
 
@@ -55,6 +64,7 @@ std::vector<T, Alloc> generate_ldpc(int rowlen, int ones_per_row, int height, bo
     for(size_t i = 0; i < rat; ++i) // For each row
         for(size_t j = i * ones_per_row; j != (i + 1) * ones_per_row; ++j)
             base[i * rowlen + j] = 1;
+    std::fprintf(stderr, "BPE: %zu. items per row: %zu\n", BPE, items_per_row);
     std::vector<int> copy(base.size());
     std::iota(copy.begin(), copy.end(), 0u);
     size_t offset = unaltered_include ? items_per_row * rat: size_t(0);
@@ -68,13 +78,22 @@ std::vector<T, Alloc> generate_ldpc(int rowlen, int ones_per_row, int height, bo
         }
         
     }
+#if !NDEBUG
+    std::set<int> lset(copy.begin(), copy.end());
+#endif
     std::mt19937_64 mt;
-    const auto retptr = ret.data();
+    auto retptr = ret.data();
     if(unaltered_include) retptr += items_per_row * rat;
     for(size_t i = 0; i < nrows; ++i) {
+        assert(std::set<int>(copy.begin(), copy.end()) == lset);
         fisher_yates_shuffle(copy, mt);
         for(size_t j = 0; j < rowlen; ++j) {
-            retptr[items_per_row * i + j / BPE] |= T(base[copy[j]]) << (j % BPE);
+            size_t idx = items_per_row * i + j / BPE;
+            assert(j < copy.size());
+            auto bidx = copy[j];
+            assert(idx < ret.size());
+            assert(bidx < base.size());
+            retptr[idx] |= T(base[bidx]) << (j % BPE);
         }
     }
     return ret;
