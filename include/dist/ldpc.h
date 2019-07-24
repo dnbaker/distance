@@ -23,10 +23,7 @@ void fisher_yates_shuffle(Con &c, F gen=F());
 template<typename It1, typename It2, typename F>
 void fisher_yates_shuffle(It1 i1, It2 i2, F gen) {
     using std::swap;
-    size_t dist = std::distance(i1, i2) - 1;
-    for(;dist > 1; --dist) {
-        swap(i1[dist], i1[gen()%dist]);
-    }
+    for(size_t dist = std::distance(i1, i2);dist-- > 1;swap(i1[dist], i1[gen()%dist]));
 }
 
 
